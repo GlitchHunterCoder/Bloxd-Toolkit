@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Bloxd Custom Games – Smart Search</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <style>
+    :root {
+      --bg: #0f1115;
+      --panel: #161a22;
+      --panel-2: #1b2130;
+      --text: #e6e9ef;
+      --muted: #a6adbb;
+      --accent: #8b9dff;
+      --accent-2: #5de4c7;
+      --ok: #34d399;
+      --warn: #f9a826;
+      --chip: #23283a;
+      --border: #262b3b;
+      --shadow: 0 10px 25px rgba(0,0,0,.25), inset 0 0 0 1px var(--border);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(8px);
+      background: linear-gradient(
+        180deg,
+        rgba(15,17,21,.98),
+        rgba(15,17,21,.88) 70%,
+        rgba(15,17,21,0)
+      );
+      border-bottom: 1px solid var(--border);
+    }
+
+    .wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    .title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 4px 0 14px;
+    }
+
+    .logo {
+      width: 32px;
+      height: 32px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #0b0f1a;
+      font-weight: 900;
+      letter-spacing: .5px;
+      box-shadow: var(--shadow);
+    }
+
+    .title h1 {
+      font-size: 20px;
+      margin: 0;
+      font-weight: 700;
+    }
+
+    .bar {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .input {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+
+    .input input {
+      flex: 1;
+      border: none;
+      outline: none;
+      background: transparent;
+      color: var(--text);
+      font-size: 15px;
+    }
+
+    .controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    button,
+    select {
+      background: var(--panel-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-size: 14px;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+    }
+
+    button.primary {
+      background: linear-gradient(135deg, #2a3350, #252a3d);
+      border-color: #2b3350;
+    }
+
+    .meta {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 10px;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 16px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .results {
+      display: grid;
+      gap: 10px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      padding: 14px;
+    }
+
+    .card {
+      display: grid;
+      gap: 8px;
+      padding: 14px;
+      border-radius: 12px;
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+    }
+
+    .card h3 {
+      margin: 0;
+      font-size: 16px;
+    }
+
+    .badges {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #20263a;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+
+    .badge.ok {
+      background: rgba(52,211,153,.08);
+      color: #73f0c8;
+      border-color: #235c4c;
+    }
+
+    .badge.warn {
+      background: rgba(249,168,38,.08);
+      color: #f9d28c;
+      border-color: #5b4921;
+    }
+
+    .badge.cat {
+      background: rgba(139,157,255,.1);
+      color: #aab7ff;
+      border-color: #2b305c;
+    }
+
+    .desc {
+      color: #c7ccda;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <div class="title">
+        <div class="logo">BX</div>
+        <h1>Bloxd Custom Games – Smart Search</h1>
+      </div>
+      <div class="bar">
+        <div class="input">
+          <input
+            id="q"
+            placeholder='e.g. name:"parkour" AND ccu:{ x>=50 }'
+            autocomplete="off"
+          >
+          <button id="clear" title="Clear">Clear</button>
+        </div>
+        <div class="controls">
+          <select id="sort">
+            <option value="relevance">Relevance</option>
+            <option value="ccu-desc">CCU ↓</option>
+            <option value="ccu-asc">CCU ↑</option>
+            <option value="fav-desc">Favourites ↓</option>
+            <option value="fav-asc">Favourites ↑</option>
+            <option value="name-asc">Name A→Z</option>
+          </select>
+          <button id="run" class="primary">Search</button>
+        </div>
+      </div>
+      <div class="meta">
+        <div id="loader">Loading data…</div>
+        <div class="count">0 Results</div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="results"></div>
+  </main>
+
+  <script>
+    // (1) your globals & data-loading stay exactly the same…
+    const DATA_URL = 'https://raw.githubusercontent.com/GlitchHunterCoder/Bloxd-Toolkit/main/Search-Engine/Custom-Games.json';
+    window.Data = [];
+  
+    const loaderEl   = document.getElementById('loader');
+    const countEl    = document.querySelector('.count');
+    const resultsEl  = document.querySelector('.results');
+    const qInput     = document.getElementById('q');
+    const clearBtn   = document.getElementById('clear');
+    const runBtn     = document.getElementById('run');
+    const sortSelect = document.getElementById('sort');
+  
+    function getFieldValue(obj, f) {
+      return obj[f];
+    }
+  
+    loaderEl.style.display = 'block';
+    fetch(DATA_URL)
+      .then(res => res.json())
+      .then(json => {
+        window.Data = json;
+        loaderEl.style.display = 'none';
+        updateCount();
+        renderResults(Data);
+      })
+      .catch(err => console.error(err));
+  
+    clearBtn.addEventListener('click', () => {
+      qInput.value = '';
+      runQuery();
+    });
+  
+    runBtn.addEventListener('click', runQuery);
+    qInput.addEventListener('keyup', e => { if (e.key === 'Enter') runQuery(); });
+    qInput.addEventListener('input', runQuery);
+    sortSelect.addEventListener('change', runQuery);
+  
+    const knownFields = [
+      'all','schematicId','name','description','gamePublished','gameCategory','ccu','favourites'
+    ];
+  
+    // Levenshtein for autocorrect
+    function levenshtein(a, b) {
+      const n = a.length, m = b.length;
+      const dp = Array.from({ length: n+1 }, () => Array(m+1).fill(0));
+      for (let i=0; i<=n; i++) dp[i][0] = i;
+      for (let j=0; j<=m; j++) dp[0][j] = j;
+      for (let i=1; i<=n; i++) {
+        for (let j=1; j<=m; j++) {
+          const cost = a[i-1] === b[j-1] ? 0 : 1;
+          dp[i][j] = Math.min(dp[i-1][j]+1, dp[i][j-1]+1, dp[i-1][j-1]+cost);
+        }
+      }
+      return dp[n][m];
+    }
+  
+    function autocorrectField(input) {
+      const lower = input.toLowerCase();
+      let best = input, dist = Infinity;
+      for (const f of knownFields) {
+        const d = levenshtein(lower, f.toLowerCase());
+        if (d < dist) { dist = d; best = f; }
+      }
+      return dist <= 10 ? best : input;
+    }
+  
+    function updateCount(n = Data.length) {
+      countEl.textContent = `${n} Results`;
+    }
+  
+    function runEngine(queryString, data = Data) {
+      const ast = tokenizeAndParse(queryString);
+      return data.filter(item => evalNode(ast, item));
+    }
+  
+    function runQuery() {
+      const q = qInput.value.trim();
+      if (!q) {
+        updateCount(Data.length);
+        return renderResults(Data);
+      }
+      let results = runEngine(q, Data);
+      sortResults(results, sortSelect.value);
+      updateCount(results.length);
+      renderResults(results);
+    }
+  
+    function renderResults(arr) {
+      resultsEl.innerHTML = '';
+      if (!arr.length) {
+        resultsEl.innerHTML = '<div class="panel">No results found.</div>';
+        return;
+      }
+      for (const item of arr) {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <h3>${item.name}</h3>
+          <div class="badges">
+            <div class="badge ok">CCU: ${item.ccu}</div>
+            <div class="badge warn">Favs: ${item.favourites}</div>
+            <div class="badge cat">${item.gameCategory}</div>
+          </div>
+          <div class="desc">${item.description || ''}</div>
+        `;
+        resultsEl.appendChild(card);
+      }
+    }
+  
+    function sortResults(arr, sortVal) {
+      if (sortVal === 'ccu-desc') arr.sort((a,b) => b.ccu - a.ccu);
+      if (sortVal === 'ccu-asc')  arr.sort((a,b) => a.ccu - b.ccu);
+      if (sortVal === 'fav-desc') arr.sort((a,b) => b.favourites - a.favourites);
+      if (sortVal === 'fav-asc')  arr.sort((a,b) => a.favourites - b.favourites);
+      if (sortVal === 'name-asc') arr.sort((a,b) => a.name.localeCompare(b.name));
+    }
+  
+    const engine = { run: runEngine };
+  
+    // ─── EVALUATOR ─────────────────────────────────────────────────────────────
+    function evalNode(node, item) {
+      switch (node.type) {
+        case 'AND':
+          return evalNode(node.left, item) && evalNode(node.right, item);
+        case 'OR':
+          return evalNode(node.left, item) || evalNode(node.right, item);
+        case 'NOT':
+          return !evalNode(node.child, item);
+        case 'ALL':
+          // apply this node (whatever its operator) across every real field
+          return Object.entries(item)
+            .some(([f,v]) => matchField({ ...node, fieldName: f }, v, item));
+        case 'FIELD':
+          // normal single‐field test
+          return matchField(node, item[node.fieldName], item);
+        default:
+          return false;
+      }
+    }
+  
+    function matchField(node, x, Search) {
+      const valStr = String(x ?? '').toLowerCase();
+      switch (node.operator) {
+        case 'EXACT':
+          return String(x) === node.rawValue;
+        case 'GROUP':
+          return node.rawValue
+            .split(/\s+/)
+            .some(term => valStr.includes(term.toLowerCase()));
+        case 'REGEX':
+          return new RegExp(node.rawValue.pattern, node.rawValue.flags)
+            .test(String(x));
+        case 'COMPARE': {
+          const m = node.rawValue.match(/^x\s*([<>]=?)\s*(\d+(\.\d+)?)$/);
+          if (!m) return false;
+          const [, op, num] = m, n = parseFloat(num);
+          return op === '>'  ? x > n
+               : op === '>=' ? x >= n
+               : op === '<'  ? x < n
+               : op === '<=' ? x <= n
+               : false;
+        }
+        case 'FUNC': {
+          // compile once
+          const raw         = node.rawValue.trim();
+          const needsNum    = /^\s*(?:return\s+)?x\s*[<>]=?/.test(raw);
+          const isArrowOrFn = /^\s*(function\b|\(?[\w,\s]*\)?\s*=>)/.test(raw);
+          const hasReturn   = /^\s*return\b/.test(raw);
+          let body          = (!isArrowOrFn && !hasReturn)
+                            ? `return (${raw});`
+                            : raw;
+          if (needsNum) body = `const x = parseFloat(x);\n${body}`;
+          const fn = new Function('x','Search','Data','engine', body);
+  
+          // special all:{…} or single‐field
+          if (node.fieldName === 'all') {
+            let any = false, maxScore = -Infinity;
+            for (const f of knownFields.filter(f => f !== 'all')) {
+              const v = getFieldValue(Search, f);
+              try {
+                const r = fn(v, Search, Data, engine);
+                if (typeof r === 'number') {
+                  any = true;
+                  maxScore = Math.max(maxScore, r);
+                } else if (r) {
+                  any = true;
+                }
+              } catch {}
+            }
+            if (maxScore > -Infinity) Search._fuzzyScore = maxScore;
+            return any;
+          }
+  
+          try {
+            const res = fn(x, Search, Data, engine);
+            if (typeof res === 'number') {
+              Search._fuzzyScore = res;
+              return true;
+            }
+            return Boolean(res);
+          } catch {
+            return false;
+          }
+        }
+        default:
+          // FUZZY substring
+          return valStr.includes(node.rawValue.toLowerCase());
+      }
+    }
+  
+    // ─── PARSER + TOKENIZER ────────────────────────────────────────────────────
+    function tokenizeAndParse(input) {
+      const tokens = tokenize(input);
+      let i = 0;
+  
+      const peek    = () => tokens[i];
+      const consume = () => tokens[i++];
+      const eof     = () => i >= tokens.length;
+      const is      = t => !eof() && peek().type === t;
+      const expect  = t => { if (!is(t)) throw new Error(`Expected ${t}, got ${peek()?.type}`); return consume(); };
+  
+      function parseExpression() {
+        return parseOr();
+      }
+  
+      function parseOr() {
+        let node = parseAnd();
+        while (is('OR')) {
+          consume();
+          node = { type:'OR',  left: node, right: parseAnd() };
+        }
+        return node;
+      }
+  
+      function parseAnd() {
+        let node = parseNot();
+        // implicit AND if you just put two primaries side by side
+        while (is('AND') || peekIsPrimaryStart()) {
+          if (is('AND')) consume();
+          const right = parseNot();
+          node = { type:'AND', left: node, right };
+        }
+        return node;
+      }
+  
+      function parseNot() {
+        if (is('NOT') || is('MINUS')) {
+          consume();
+          return { type:'NOT', child: parseNot() };
+        }
+        return parsePrimary();
+      }
+  
+      function peekIsPrimaryStart() {
+        return is('LPAREN')
+            || is('BRACE')
+            || (is('IDENT') && tokens[i+1]?.type === 'COLON');
+      }
+  
+      function parsePrimary() {
+        // ( … )
+        if (is('LPAREN')) {
+          consume();
+          const expr = parseExpression();
+          expect('RPAREN');
+          return expr;
+        }
+        // {…} as bare ⇒ all:{…}
+        if (is('BRACE')) {
+          return parseFieldValue('all');
+        }
+        // field:value
+        if (is('IDENT') && tokens[i+1]?.type === 'COLON') {
+          let fld = consume().value;
+          fld = autocorrectField(fld);
+          consume('COLON');
+          return parseFieldValue(fld);
+        }
+        // bare term ⇒ ALL fuzzy
+        const tok = consume();
+        return { type: 'ALL', operator: 'FUZZY', rawValue: tok.value };
+      }
+  
+      function parseFieldValue(fieldName) {
+        let node;
+        // "exact"
+        if (is('STRING')) {
+          node = { type:'FIELD', fieldName, operator:'EXACT',   rawValue: consume().value };
+        }
+        // grouping:  (one two three)
+        else if (is('LPAREN')) {
+          consume();
+          const parts = [];
+          while (!is('RPAREN') && !eof()) {
+            const t2 = consume();
+            if (t2.type === 'STRING' || t2.type === 'IDENT') parts.push(t2.value);
+          }
+          expect('RPAREN');
+          node = { type:'FIELD', fieldName, operator:'GROUP', rawValue: parts.join(' ') };
+        }
+        // /regex/flag
+        else if (is('REGEX')) {
+          const v = consume().value;
+          node = { type:'FIELD', fieldName, operator:'REGEX', rawValue: v };
+        }
+        // {…} ⇒ COMPARE or FUNC
+        else if (is('BRACE')) {
+          const raw = consume().value.slice(1,-1).trim();
+          const isCmp = /^x\s*[<>]=?\s*\d+(\.\d+)?$/.test(raw);
+          node = { type:'FIELD', fieldName, operator: isCmp ? 'COMPARE' : 'FUNC', rawValue: raw };
+        }
+        // bare IDENT or CHAR ⇒ fuzzy
+        else {
+          const t = consume();
+          node = { type:'FIELD', fieldName, operator:'FUZZY', rawValue: t.value };
+        }
+  
+        // if they wrote all:…, promote to true ALL node
+        if (fieldName === 'all') {
+          node.type = 'ALL';
+        }
+        return node;
+      }
+      const ast = parseExpression();
+      if (!eof()) throw new Error(`Unexpected token ${peek().type}`);
+      return ast;
+    }
+    function tokenize(str) {
+      const tokens = [];
+      const re = /\s*(?:(AND|OR|NOT)|(\()|(\))|(\{(?:\\.|[^}])*\})|(:)|(-)|("(?:\\.|[^"])*")|(\/(?:\\.|[^\/])+\/[a-z]*)|([A-Za-z_]\w*)|(.))/g;
+      let m;
+      while ((m = re.exec(str)) !== null) {
+        if (m[1])      tokens.push({ type: m[1] });             // AND|OR|NOT
+        else if (m[2]) tokens.push({ type: 'LPAREN' });
+        else if (m[3]) tokens.push({ type: 'RPAREN' });
+        else if (m[4]) tokens.push({ type: 'BRACE', value: m[4] });
+        else if (m[5]) tokens.push({ type: 'COLON' });
+        else if (m[6]) tokens.push({ type: 'MINUS' });
+        else if (m[7]) tokens.push({ type: 'STRING', value: JSON.parse(m[7]) });
+        else if (m[8]) {
+          const parts = /^\/(.+)\/([a-z]*)$/.exec(m[8]);
+          tokens.push({ type: 'REGEX', value: { pattern: parts[1], flags: parts[2]||'i' } });
+        }
+        else if (m[9])  tokens.push({ type: 'IDENT', value: m[9] });
+        else if (m[10]) tokens.push({ type: 'CHAR',  value: m[10] });
+      }
+      return tokens;
+    }
+  </script>
+</body></html>
