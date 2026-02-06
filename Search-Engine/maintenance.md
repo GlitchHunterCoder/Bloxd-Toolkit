@@ -59,4 +59,4 @@ data.map(e=>e.results).flat()
 ```
 - Copy Formatted Data into `Custom-Games.json`
 ## And you are done !!!
-with that the data is formatted and usable
+With that, the Data is formatted and usable, and thus the Search Engine can use it as lookup
